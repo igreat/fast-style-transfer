@@ -8,30 +8,38 @@ class StyleLoss(nn.Module):
         super(StyleLoss, self).__init__()
         self.target_gram = get_gram_matrix(target_gram).detach()
         self.weight = weight
+        self.mode = "capture"
 
     def forward(self, gen_feature):
-        gram_matrix = get_gram_matrix(gen_feature)
-        self.loss = self.weight * F.mse_loss(gram_matrix, self.target_gram)
+        if self.mode == "loss":
+            gram_matrix = get_gram_matrix(gen_feature)
+            self.loss = self.weight * F.mse_loss(gram_matrix, self.target_gram)
+
         return gen_feature
 
 
 class ContentLoss(nn.Module):
-    def __init__(self, target_feature, weight):
+    def __init__(self, weight):
         super(ContentLoss, self).__init__()
         self.weight = weight
-        self.target_feature = target_feature.detach()
+        self.mode = "capture"
 
     def forward(self, gen_feature):
-        self.loss = self.weight * F.mse_loss(
-            gen_feature, self.target_feature, reduction="sum"
-        )
+        if self.mode == "capture":
+            self.target_feature = gen_feature.detach()
+        elif self.mode == "loss":
+            self.loss = self.weight * F.mse_loss(gen_feature, self.target_feature)
+            self.mode = "loss"
+
         return gen_feature
 
 
 def get_gram_matrix(featmaps):
-    _, c, h, w = featmaps.shape
-    featmaps = featmaps.view(c, h * w)
-    return (featmaps @ featmaps.T).div(h * w)
+    # make this return applicable for inputs with batch size > 1!
+    b, c, h, w = featmaps.shape
+    featmaps = featmaps.view(b, c, h * w)
+    output = (featmaps @ featmaps.transpose(1, 2)).div(c * h * w)
+    return output
 
 
 # Total variation loss

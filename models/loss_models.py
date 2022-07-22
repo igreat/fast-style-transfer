@@ -6,7 +6,6 @@ from utils import StyleLoss, ContentLoss, TVLoss
 class VGG19Loss(nn.Module):
     def __init__(
         self,
-        content_img,
         style_img,
         content_weight=1,
         style_weight=1e4,
@@ -48,7 +47,6 @@ class VGG19Loss(nn.Module):
             self.layers.add_module(name, x)
 
             style_img = x(style_img)
-            content_img = x(content_img)
 
             if name in style_layers:
                 loss_module = StyleLoss(style_img, style_weight)
@@ -56,7 +54,7 @@ class VGG19Loss(nn.Module):
                 self.style_losses.append(loss_module)
                 style_layers.remove(name)
             elif name in content_layers:
-                loss_module = ContentLoss(content_img, content_weight)
+                loss_module = ContentLoss(content_weight)
                 self.layers.add_module(f"{name}_content_loss", loss_module)
                 self.content_losses.append(loss_module)
                 content_layers.remove(name)
@@ -65,13 +63,36 @@ class VGG19Loss(nn.Module):
             if len(style_layers) == 0 and len(content_layers) == 0:
                 break
 
-    def forward(self, input):
+    def switch_mode(self):
+        # todo
+        pass
+
+    def forward(self, input, content_img):
+
+        for content_layer in self.content_losses:
+            content_layer.mode = "capture"
+        for style_layer in self.style_losses:
+            style_layer.mode = "capture"
+
+        x = self.tv_loss(content_img)
+        x = self.layers(x)
+
+        for content_layer in self.content_losses:
+            content_layer.mode = "loss"
+        for style_layer in self.style_losses:
+            style_layer.mode = "loss"
+
         x = self.tv_loss(input)
         x = self.layers(x)
 
-        # consider making this just return the total loss
+        # total_loss = self.tv_loss.loss
+        # for content in self.content_losses:
+        #     total_loss += content.loss
+        # for style in self.style_losses:
+        #     total_loss += style.loss
+
         return (
-            [content.loss for content in self.content_losses],
-            [style.loss for style in self.style_losses],
-            self.tv_loss.loss,
+            sum(style.loss for style in self.style_losses)
+            + sum(content.loss for content in self.content_losses)
+            + self.tv_loss.loss
         )

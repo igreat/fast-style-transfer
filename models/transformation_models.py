@@ -1,6 +1,5 @@
 import torch.nn as nn
 from torchvision import transforms
-from loss_models import VGG19Loss
 
 
 class ResidualBlock(nn.Module):
@@ -17,7 +16,8 @@ class ResidualBlock(nn.Module):
 
     def forward(self, input):
         x = self.block(input)
-        cropped_input = transforms.CenterCrop(x.shape)(input)
+        _, _, h, w = x.shape
+        cropped_input = transforms.CenterCrop((h, w))(input)
         return x + cropped_input
 
 
@@ -32,7 +32,7 @@ class TransformationModel(nn.Module):
             nn.BatchNorm2d(32),
             nn.ReLU(),
             nn.Conv2d(32, 64, 3, stride=2),
-            nn.BatchNorm2d(32),
+            nn.BatchNorm2d(64),
             nn.ReLU(),
             nn.Conv2d(64, 128, 3, stride=2),
             nn.BatchNorm2d(128),
@@ -52,14 +52,14 @@ class TransformationModel(nn.Module):
             ResidualBlock(128),
             nn.BatchNorm2d(128),
             nn.ReLU(),
-            nn.ConvTranspose2d(128, 64, 3, stride=2),
+            nn.ConvTranspose2d(128, 64, 3, stride=2, output_padding=1),
             nn.BatchNorm2d(64),
             nn.ReLU(),
-            nn.ConvTranspose2d(64, 32, 3, stride=2),
+            nn.ConvTranspose2d(64, 32, 3, stride=2, output_padding=1),
             nn.BatchNorm2d(32),
             nn.ReLU(),
             nn.Conv2d(32, 3, 3),
         )
 
-    def forward(self, image):
-        return self.layers(image)
+    def forward(self, input):
+        return self.layers(input)
