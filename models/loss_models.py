@@ -8,8 +8,8 @@ class VGG19Loss(nn.Module):
         self,
         style_img,
         content_weight=1,
-        style_weight=1e4,
-        tv_weight=1e-4,
+        style_weight=1e2,
+        tv_weight=1e-5,
         content_layers=["relu4_2"],
         style_layers=["relu1_1", "relu2_1", "relu3_1", "relu4_1", "relu5_1"],
         pooling="max",
@@ -84,12 +84,6 @@ class VGG19Loss(nn.Module):
 
         x = self.tv_loss(input)
         x = self.layers(x)
-
-        # total_loss = self.tv_loss.loss
-        # for content in self.content_losses:
-        #     total_loss += content.loss
-        # for style in self.style_losses:
-        #     total_loss += style.loss
 
         return (
             sum(style.loss for style in self.style_losses)

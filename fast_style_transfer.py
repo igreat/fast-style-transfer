@@ -15,16 +15,15 @@ def train(data_loader, model, loss_model, optimizer):
     size = len(data_loader.dataset)
     model.train()
     for batch, (X, _) in enumerate(data_loader):
-        X = X.to(device)
-        init_images = X.clone()  # experiment with different init methods
-        result = model(init_images)
-        loss = loss_model(result, X.clone())
+        X = X.to(device)  # experiment with different init methods
+        result = model(X)
+        loss = loss_model(result, X)
 
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
 
-        if batch % 8 == 0:
+        if batch * len(X) % 100 == 0:
             loss, current = loss.item(), batch * len(X)
             print(f"loss: {loss:>7f}  [{current:>5d}/{size:>5d}]")
 
@@ -41,7 +40,7 @@ transform = transforms.Compose(
 
 def main():
     train_dataset = datasets.ImageFolder(root="data", transform=transform)
-    train_loader = DataLoader(train_dataset, batch_size=4)
+    train_loader = DataLoader(train_dataset, batch_size=2, shuffle=True)
 
     style_img = transform(Image.open("images/starry-night.jpg")).to(device).unsqueeze(0)
     loss_model = loss_models.VGG19Loss(style_img, device=device)
@@ -50,7 +49,8 @@ def main():
 
     optimizer = optim.Adam(model.parameters())
 
-    # training for one epoch
+    # training for two epochs
+    train(train_loader, model, loss_model, optimizer)
     train(train_loader, model, loss_model, optimizer)
 
     # testing it on a sample image
