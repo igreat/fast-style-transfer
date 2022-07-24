@@ -8,12 +8,12 @@ class ResidualBlock(nn.Module):
         # experiment with different padding
         self.block = nn.Sequential(
             nn.Conv2d(filters, filters, 3),
-            nn.BatchNorm2d(filters),
+            nn.InstanceNorm2d(filters, affine=True),
             nn.ReLU(),
             nn.Conv2d(filters, filters, 3),
-            nn.BatchNorm2d(filters),
+            nn.InstanceNorm2d(filters, affine=True),
         )
-        self.batch_norm = nn.BatchNorm2d(filters)
+        self.batch_norm = nn.InstanceNorm2d(filters, affine=True)
         self.relu = nn.ReLU()
 
     def forward(self, input):
@@ -33,13 +33,13 @@ class TransformationModel(nn.Module):
             # downsampling layers
             nn.ReflectionPad2d(40),
             nn.Conv2d(3, 32, 9, padding="same"),
-            nn.BatchNorm2d(32),
+            nn.InstanceNorm2d(32, affine=True),
             nn.ReLU(),
             nn.Conv2d(32, 64, 3, stride=2),
-            nn.BatchNorm2d(64),
+            nn.InstanceNorm2d(64, affine=True),
             nn.ReLU(),
             nn.Conv2d(64, 128, 3, stride=2),
-            nn.BatchNorm2d(128),
+            nn.InstanceNorm2d(128, affine=True),
             nn.ReLU(),
             # residual layers
             ResidualBlock(128),
@@ -49,12 +49,13 @@ class TransformationModel(nn.Module):
             ResidualBlock(128),
             # upsampling using fractional convolutions
             nn.ConvTranspose2d(128, 64, 3, stride=2, output_padding=1),
-            nn.BatchNorm2d(64),
+            nn.InstanceNorm2d(64, affine=True),
             nn.ReLU(),
             nn.ConvTranspose2d(64, 32, 3, stride=2, output_padding=1),
-            nn.BatchNorm2d(32),
+            nn.InstanceNorm2d(32, affine=True),
             nn.ReLU(),
             nn.Conv2d(32, 3, 3),
+            nn.InstanceNorm2d(3, affine=True),
         )
         self.sigmoid = nn.Sigmoid()
 
