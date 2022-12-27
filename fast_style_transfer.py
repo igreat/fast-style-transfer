@@ -89,6 +89,14 @@ def train():
 
 def apply_style(image, path_to_model):
 
+    image = (
+        pil_to_tensor((Image.open(image)).convert("RGB"))
+        .to(device)
+        .unsqueeze(0)
+        .float()
+        .div(255)
+    )
+
     transformation_model = transformation_models.TransformationModel().to(device)
 
     # code to load pretrained model
@@ -103,22 +111,8 @@ def apply_style(image, path_to_model):
 
 
 def main():
-
-    # testing it on a sample image
-    test_image = resize(
-        pil_to_tensor(Image.open("images/sultan-qaboos-grand-mosque.jpg"))
-        .to(device)
-        .unsqueeze(0)
-        .float(),
-        256,
-    )
-
-    transformation_model = transformation_models.TransformationModel().to(device)
-
-    # code to load pretrained model
-    transformation_model.load_state_dict(
-        torch.load("auto_save(28).pth", map_location=torch.device("cpu"))
-    )
+    train()
+    apply_style("images/monalisa.jpg", "saved-models/trained_model.pth")
 
 
 if __name__ == "__main__":
