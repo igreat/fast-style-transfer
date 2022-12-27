@@ -1,36 +1,40 @@
 import torch.nn as nn
 import torch.nn.functional as F
-import torchvision.transforms as transforms
 import torch
 
 
 class StyleLoss(nn.Module):
-    def __init__(self, target_gram, weight):
+    def __init__(self, target_feat, weight, batch_size=4):
         super(StyleLoss, self).__init__()
-        self.target_gram = get_gram_matrix(target_gram).detach()
-        self.weight = weight
+        self.target_gram = (
+            get_gram_matrix(target_feat).detach().repeat(batch_size, 1, 1)
+        )
+        self.strength = weight
         self.mode = "capture"
 
     def forward(self, gen_feature):
         if self.mode == "loss":
             gram_matrix = get_gram_matrix(gen_feature)
-            self.loss = self.weight * F.mse_loss(gram_matrix, self.target_gram)
+            self.loss = self.strength * F.mse_loss(gram_matrix, self.target_gram)
 
         return gen_feature
 
 
+# TODO: there could be a HUGE bug in how I calculate the content loss!
 class ContentLoss(nn.Module):
     def __init__(self, weight):
         super(ContentLoss, self).__init__()
-        self.weight = weight
+        self.strength = weight
         self.mode = "capture"
+        self.loss = 0.0
 
     def forward(self, gen_feature):
         if self.mode == "capture":
             self.target_feature = gen_feature.detach()
         elif self.mode == "loss":
-            self.loss = self.weight * F.mse_loss(gen_feature, self.target_feature)
-            self.mode = "loss"
+            self.loss = self.strength * F.mse_loss(gen_feature, self.target_feature)
+        else:
+            raise ValueError(f"Unknown mode: {self.mode}")
 
         return gen_feature
 

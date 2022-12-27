@@ -1,27 +1,40 @@
-from torchvision.models import vgg19, VGG19_Weights
+from torchvision.models import vgg16, VGG16_Weights
 import torch.nn as nn
 from utils import StyleLoss, ContentLoss, TVLoss
 
 
-class VGG19Loss(nn.Module):
+DEFAULT_CONTENT_LAYERS = ["relu2_2"]
+DEFAULT_STYLE_LAYERS = ["relu1_2", "relu2_2", "relu3_3", "relu4_3"]
+
+
+class VGG16Loss(nn.Module):
+    """
+    This model returns the loss of the style and content of the input image
+    """
+
     def __init__(
         self,
         style_img,
-        content_weight=1,
-        style_weight=1e2,
-        tv_weight=1e-5,
-        content_layers=["relu4_2"],
-        style_layers=["relu1_1", "relu2_1", "relu3_1", "relu4_1", "relu5_1"],
+        content_weight=1e5,
+        style_weight=1e10,
+        tv_weight=0,
+        content_layers=DEFAULT_CONTENT_LAYERS,
+        style_layers=DEFAULT_STYLE_LAYERS,
+        batch_size=4,
         pooling="max",
         device="cpu",
     ):
 
-        super(VGG19Loss, self).__init__()
-        features = vgg19(weights=VGG19_Weights.DEFAULT).features.eval().to(device)
+        super(VGG16Loss, self).__init__()
+        features = (
+            vgg16(weights=VGG16_Weights.IMAGENET1K_FEATURES).features.eval().to(device)
+        )
         features.requires_grad_(False)
 
         self.content_losses = []
         self.style_losses = []
+        self.total_content_loss = 0.0
+        self.total_style_loss = 0.0
 
         self.tv_loss = TVLoss(tv_weight)
         self.layers = nn.Sequential()
@@ -49,11 +62,11 @@ class VGG19Loss(nn.Module):
             style_img = x(style_img)
 
             if name in style_layers:
-                loss_module = StyleLoss(style_img, style_weight)
+                loss_module = StyleLoss(style_img, style_weight, batch_size)
                 self.layers.add_module(f"{name}_style_loss", loss_module)
                 self.style_losses.append(loss_module)
                 style_layers.remove(name)
-            elif name in content_layers:
+            if name in content_layers:
                 loss_module = ContentLoss(content_weight)
                 self.layers.add_module(f"{name}_content_loss", loss_module)
                 self.content_losses.append(loss_module)
@@ -63,30 +76,22 @@ class VGG19Loss(nn.Module):
             if len(style_layers) == 0 and len(content_layers) == 0:
                 break
 
-    def switch_mode(self):
-        # todo
-        pass
+    def switch_mode(self, mode):
+        for content_layer in self.content_losses:
+            content_layer.mode = mode
+        for style_layer in self.style_losses:
+            style_layer.mode = mode
 
     def forward(self, input, content_img):
 
-        for content_layer in self.content_losses:
-            content_layer.mode = "capture"
-        for style_layer in self.style_losses:
-            style_layer.mode = "capture"
+        self.switch_mode("capture")
+        self.layers(content_img)
 
-        x = self.tv_loss(content_img)
-        x = self.layers(x)
+        self.switch_mode("loss")
+        self.tv_loss(input)
+        self.layers(input)
 
-        for content_layer in self.content_losses:
-            content_layer.mode = "loss"
-        for style_layer in self.style_losses:
-            style_layer.mode = "loss"
+        self.total_content_loss = sum([x.loss for x in self.content_losses])
+        self.total_style_loss = sum([x.loss for x in self.style_losses])
 
-        x = self.tv_loss(input)
-        x = self.layers(x)
-
-        return (
-            sum(style.loss for style in self.style_losses)
-            + sum(content.loss for content in self.content_losses)
-            + self.tv_loss.loss
-        )
+        return self.total_content_loss + self.total_style_loss + self.tv_loss.loss

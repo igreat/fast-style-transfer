@@ -1,7 +1,5 @@
-# TODO: make clean model saving functionality
-# TODO: Experiment with contatenating noise with input image
-#       Think about adding this process as part of the forward pass
-#       of the transformation network
+# TODO: separate the training and running of the model into two files
+# TODO: think about changing the training dataset to 2014 COCO dataset instead of 2017
 
 import torch
 from torchvision import transforms
@@ -15,71 +13,112 @@ from torchvision.transforms.functional import pil_to_tensor, resize
 
 device = "mps"
 
+transform = transforms.Compose(
+    [
+        transforms.Resize(128),
+        transforms.CenterCrop(128),
+        transforms.ToTensor(),
+    ]
+)
 
-def train(data_loader, model, loss_model, optimizer):
-    size = len(data_loader.dataset)
-    model.train()
-    for batch, (X, _) in enumerate(data_loader):
-        X = X.to(device)  # experiment with different init methods
-        result = model(X)
-        loss = loss_model(result, X)
+mean = torch.tensor([0.485, 0.456, 0.406])
+std = torch.tensor([0.229, 0.224, 0.225])
+
+normalize = transforms.Normalize(mean, std)
+
+
+def train():
+
+    train_dataset = datasets.ImageFolder(root="data/fiftyk", transform=transform)
+    train_loader = DataLoader(train_dataset, batch_size=4, shuffle=True)
+
+    style_img = (
+        pil_to_tensor((Image.open("images/mosaic.jpg")).convert("RGB"))
+        .to(device)
+        .unsqueeze(0)
+        .float()
+        .div(255)
+    )
+    style_img = normalize(style_img)
+    loss_model = loss_models.VGG16Loss(style_img, device=device, batch_size=4)
+
+    transformation_model = transformation_models.TransformationModel().to(device)
+
+    optimizer = optim.Adam(transformation_model.parameters())
+
+    losses = {"content": [], "style": []}
+
+    # training for two epochs
+    size = len(train_loader.dataset)
+    transformation_model.train()
+    for batch, (x, _) in enumerate(train_loader):
+        x = x.to(device)  # experiment with different init methods
+        result = transformation_model(x)
+
+        x = x.div(255)
+        result = result.div(255)
+
+        x = normalize(x)
+        result = normalize(result)
+
+        loss = loss_model(result, x)
+
+        # logging losses
+        if losses:
+            losses["content"].append(loss_model.total_content_loss.item())
+            losses["style"].append(loss_model.total_style_loss.item())
 
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
 
-        if batch * len(X) % 100 == 0:
-            loss, current = loss.item(), batch * len(X)
-            print(f"loss: {loss:>7f}  [{current:>5d}/{size:>5d}]")
+        current_iteration = batch * len(x)
+        if current_iteration % 100 == 0:
+            current = batch * len(x)
+            print(f"style loss: {loss_model.total_style_loss.item():>7f}", end="\t")
+            print(f"content loss: {loss_model.total_content_loss.item():>7f}", end="\t")
+            print(f"total loss: {loss.item():>7f}", end="\t")
+            print(f"[{current:>5d}/{size:>5d}]")
 
-        # autosaving every 2000 training steps
-        if batch * len(X) % 2e3 == 0:
-            torch.save(model.state_dict(), "auto_save.pth")
+        # autosaving every 1000 training steps
+        if current_iteration % 1e3 == 0:
+            torch.save(transformation_model.state_dict(), "auto_save.pth")
 
-
-transform = transforms.Compose(
-    [
-        transforms.Resize(256),
-        transforms.CenterCrop(256),
-        transforms.ToTensor(),
-        transforms.Lambda(lambda x: x.mul(255)),
-    ]
-)
+    torch.save(transformation_model.state_dict(), "saved-models/trained_model.pth")
 
 
-def main():
-    train_dataset = datasets.ImageFolder(root="data/fiftyk", transform=transform)
-    train_loader = DataLoader(train_dataset, batch_size=4, shuffle=True)
-
-    style_img = transform(Image.open("images/starry-night.jpg")).to(device).unsqueeze(0)
-    loss_model = loss_models.VGG19Loss(style_img, device=device)
+def apply_style(image, path_to_model):
 
     transformation_model = transformation_models.TransformationModel().to(device)
 
     # code to load pretrained model
     transformation_model.load_state_dict(
-        torch.load("saved-models/test_model_IN.pth", map_location=torch.device("cpu"))
+        torch.load(path_to_model, map_location=torch.device("cpu"))
     )
 
-    optimizer = optim.Adam(transformation_model.parameters())
+    gen_image = transformation_model.eval()(image).div(255)
 
-    # training for one epoch
-    train(train_loader, transformation_model, loss_model, optimizer)
+    # saving image
+    save_image(gen_image.squeeze(0), "styled_image.png")
 
-    torch.save(transformation_model.state_dict(), "saved-models/in_test_model.pth")
+
+def main():
 
     # testing it on a sample image
     test_image = resize(
         pil_to_tensor(Image.open("images/sultan-qaboos-grand-mosque.jpg"))
-        .mul(255.0)
         .to(device)
-        .unsqueeze(0),
-        400,
+        .unsqueeze(0)
+        .float(),
+        256,
     )
-    gen_image = transformation_model.eval()(test_image).div(255)
 
-    # saving image
-    save_image(gen_image.squeeze(0), "test.png")
+    transformation_model = transformation_models.TransformationModel().to(device)
+
+    # code to load pretrained model
+    transformation_model.load_state_dict(
+        torch.load("auto_save(28).pth", map_location=torch.device("cpu"))
+    )
 
 
 if __name__ == "__main__":
