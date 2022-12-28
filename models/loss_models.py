@@ -15,8 +15,8 @@ class VGG16Loss(nn.Module):
     def __init__(
         self,
         style_img,
-        content_weight=1e5,
-        style_weight=1e10,
+        content_weight=1e0,
+        style_weight=1e5,
         tv_weight=0,
         content_layers=DEFAULT_CONTENT_LAYERS,
         style_layers=DEFAULT_STYLE_LAYERS,
@@ -26,9 +26,7 @@ class VGG16Loss(nn.Module):
     ):
 
         super(VGG16Loss, self).__init__()
-        features = (
-            vgg16(weights=VGG16_Weights.IMAGENET1K_FEATURES).features.eval().to(device)
-        )
+        features = vgg16(weights=VGG16_Weights.IMAGENET1K_V1).features.eval().to(device)
         features.requires_grad_(False)
 
         self.content_losses = []
