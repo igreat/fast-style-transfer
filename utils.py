@@ -1,6 +1,8 @@
 import torch.nn as nn
 import torch.nn.functional as F
 import torch
+import numpy as np
+import matplotlib.pyplot as plt
 
 
 class StyleLoss(nn.Module):
@@ -60,3 +62,24 @@ class TVLoss(nn.Module):
             torch.sum(torch.abs(self.x_diff)) + torch.sum(torch.abs(self.y_diff))
         )
         return featmaps
+
+
+def display_images_in_a_grid(
+    images: list[np.ndarray], cols: int = 5, titles: list[str] = None
+):
+    """Display a list of images in a grid."""
+    assert (
+        (titles is None) or (len(images) == len(titles)))
+    n_images = len(images)
+    if titles is None:
+        titles = ["Image (%d)" % i for i in range(1, n_images + 1)]
+    fig = plt.figure()
+    for n, (image, title) in enumerate(zip(images, titles)):
+        a = fig.add_subplot(int(np.ceil(n_images / float(cols))), cols, n + 1)
+        if image.ndim == 2:
+            plt.gray()
+        plt.imshow(image)
+        a.set_title(title)
+    fig.set_size_inches(np.array(fig.get_size_inches()) * n_images)
+    plt.show()
+    
