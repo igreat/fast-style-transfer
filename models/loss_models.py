@@ -1,16 +1,20 @@
+import torch
 from torchvision.models import vgg16, VGG16_Weights
 import torch.nn as nn
 from utils import StyleLoss, ContentLoss, TVLoss
-
-
-DEFAULT_CONTENT_LAYERS = ["relu2_2"]
-DEFAULT_STYLE_LAYERS = ["relu1_2", "relu2_2", "relu3_3", "relu4_3"]
 
 
 class VGG16Loss(nn.Module):
     """
     This model returns the loss of the style and content of the input image
     """
+
+    # these assume an pixel values in the range [0, 1]
+    MEAN = torch.tensor([0.485, 0.456, 0.406]).view(3, 1, 1)
+    STD = torch.tensor([0.229, 0.224, 0.225]).view(3, 1, 1)
+
+    DEFAULT_CONTENT_LAYERS = ["relu2_2"]
+    DEFAULT_STYLE_LAYERS = ["relu1_2", "relu2_2", "relu3_3", "relu4_3"]
 
     def __init__(
         self,
@@ -28,6 +32,11 @@ class VGG16Loss(nn.Module):
         super(VGG16Loss, self).__init__()
         features = vgg16(weights=VGG16_Weights.IMAGENET1K_V1).features.eval().to(device)
         features.requires_grad_(False)
+
+        # load stuff to device
+        self.MEAN = self.MEAN.to(device)
+        self.STD = self.STD.to(device)
+        style_img = style_img.to(device)
 
         self.content_losses = []
         self.style_losses = []

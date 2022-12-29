@@ -3,7 +3,9 @@ import torch.nn.functional as F
 import torch
 import numpy as np
 import matplotlib.pyplot as plt
-
+from torchvision.transforms.functional import pil_to_tensor, resize
+from PIL import Image
+from models import loss_models
 
 class StyleLoss(nn.Module):
     def __init__(self, target_feat, weight, batch_size=4):
@@ -22,7 +24,6 @@ class StyleLoss(nn.Module):
         return gen_feature
 
 
-# TODO: there could be a HUGE bug in how I calculate the content loss!
 class ContentLoss(nn.Module):
     def __init__(self, weight):
         super(ContentLoss, self).__init__()
@@ -42,7 +43,6 @@ class ContentLoss(nn.Module):
 
 
 def get_gram_matrix(featmaps):
-    # make this return applicable for inputs with batch size > 1!
     b, c, h, w = featmaps.shape
     featmaps = featmaps.view(b, c, h * w)
     output = (featmaps @ featmaps.transpose(1, 2)).div(c * h * w)
@@ -82,4 +82,38 @@ def display_images_in_a_grid(
         a.set_title(title)
     fig.set_size_inches(np.array(fig.get_size_inches()) * n_images)
     plt.show()
+
+def apply_style_grid(model, path_to_image, paths_to_models):
+    """
+    Produces a grid of images in matplotlib for the outputs of multiple models on the same image.
+    I used this to compare multiple checkpoints of the same model.
+    """
+
+    img = resize(
+        pil_to_tensor((Image.open(path_to_image)).convert("RGB"))
+        .unsqueeze(0)
+        .float()
+        .div(255),
+        512,
+    )
+    transformation_model = model.TransformationModel()
+
+    # code to load pretrained models
+    models = []
+    for path in paths_to_models:
+        checkpoint = torch.load(path, map_location=torch.device("cpu"))
+        transformation_model.load_state_dict(checkpoint["model_state_dict"])
+        models.append(transformation_model.eval())
+
+    mean, std = loss_models.VGG16Loss.MEAN, loss_models.VGG16Loss.STD
+    gen_images = []
+    for model in models:
+        gen_image = model(img)
+        gen_image = gen_image * std + mean
+        gen_image = gen_image.clamp(0, 1)
+        gen_image = gen_image.squeeze(0).detach().cpu().numpy().transpose(1, 2, 0)
+        gen_images.append(gen_image)
+
+    # display images in a grid
+    display_images_in_a_grid(gen_images, 4, paths_to_models)
     
