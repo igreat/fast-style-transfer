@@ -8,7 +8,7 @@ from saved_models.pretrained_models import PRETRAINED_MODELS
 device = {torch.has_cuda: "cuda", torch.has_mps: "mps"}.get(True, "cpu")
 
 
-def stylize_image(path_to_image, path_to_model):
+def stylize_image(path_to_image, path_to_model, path_to_save="images/styled_image.png"):
     img = (
         pil_to_tensor((Image.open(path_to_image)).convert("RGB"))
         .unsqueeze(0)
@@ -31,13 +31,15 @@ def stylize_image(path_to_image, path_to_model):
     gen_image = gen_image.clamp(0, 1)
 
     # saving image
-    save_image(gen_image.squeeze(0), "styled_image.png")
+    save_image(gen_image.squeeze(0), path_to_save)
+
+    print(f"image saved successfully at {path_to_save}")
 
 
 if __name__ == "__main__":
 
     image_config = {
-        "path_to_image": "images/houses.jpg",
+        "path_to_image": "images/content_images/houses.jpg",
         "path_to_model": PRETRAINED_MODELS["rain_princess"],
     }
 

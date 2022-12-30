@@ -63,6 +63,44 @@ class TVLoss(nn.Module):
         )
         return featmaps
 
+def preprocess_batch(images: torch.Tensor, loss_model):
+    """
+    Preprocess a batch of images for the style transfer model.
+    Note that the mean and std are stored inside the loss model.
+    """
+    img = images.float().div(255)
+
+    mean, std = loss_model.MEAN, loss_model.STD
+    img = (images - mean) / std
+
+    return img
+
+def deprocess_batch(images: torch.Tensor, loss_model, device="cpu"):
+    """
+    De-process a batch of images for the style transfer model.
+    Note that the mean and std are stored inside the loss model.
+    """
+    mean, std = loss_model.MEAN.to(device), loss_model.STD.to(device)
+    img = images * std + mean
+    img = img.clamp(0, 1)
+    return img
+
+def preprocess_image(image: torch.Tensor, loss_model):
+    """
+    Preprocess an image for the style transfer model.
+    Note that the mean and std are stored inside the loss model.
+    """
+    img = image.unsqueeze(0)
+    return preprocess_batch(img, loss_model)
+
+def deprocess_image(image: torch.Tensor, loss_model, device="cpu"):
+    """
+    De-process an image for the style transfer model.
+    Note that the mean and std are stored inside the loss model.
+    """
+    img = deprocess_batch(image, loss_model, device)
+    return img.squeeze(0)
+
 
 def display_images_in_a_grid(
     images: list[np.ndarray], cols: int = 5, titles: list[str] = None

@@ -78,7 +78,7 @@ class StyleModelTrainer:
                             "optimizer_state_dict": self.optimizer.state_dict(),
                             "loss": loss,
                         },
-                        "auto-save/auto_save.pth",
+                        "auto_save/auto_save.pth",
                     )
 
                 # accumulative checkpointing every 10000 training steps
@@ -90,7 +90,7 @@ class StyleModelTrainer:
                             "optimizer_state_dict": self.optimizer.state_dict(),
                             "loss": loss,
                         },
-                        f"auto-save/checkpoint{current_checkpoint}.pth",
+                        f"auto_save/checkpoint{current_checkpoint}.pth",
                     )
                     current_checkpoint += 1
 
@@ -137,7 +137,7 @@ class StyleModelTrainer:
                     )
 
         torch.save(
-            self.transformation_model.state_dict(), "saved-models/trained_model.pth"
+            self.transformation_model.state_dict(), "saved_models/trained_model.pth"
         )
 
 if __name__ == "__main__":
@@ -158,7 +158,7 @@ if __name__ == "__main__":
     optimizer = torch.optim.Adam(transformation_model.parameters(), lr=1e-3)
 
     # loading the model and optimizer
-    checkpoint = torch.load("saved-models/rain_princess_pretrained_better.pth")
+    checkpoint = torch.load("saved_models/rain_princess_pretrained_better.pth")
     transformation_model.load_state_dict(checkpoint["model_state_dict"])
     optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
     

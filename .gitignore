@@ -2,4 +2,6 @@ __pycache__
 data
 runs
 .DS_Store
-images/content-images/me.jpg
+images/content_images/me.jpg
+videos/source_videos/aamon.mp4
+videos/generated_videos/stylized_video.mp4
