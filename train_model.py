@@ -11,8 +11,8 @@ from models import loss_models, transformation_models
 
 class StyleModelTrainer:
     def __init__(self, model, loss_model, optimizer, training_config, device):
-        self.transformation_model = model.to(device)
-        self.loss_model = loss_model.to(device)
+        self.transformation_model = model
+        self.loss_model = loss_model
         self.optimizer = optimizer
         self.device = device
         self.training_config = training_config
@@ -41,11 +41,12 @@ class StyleModelTrainer:
 
         # there is a bug when doing multiple epochs where the batch size for some reason becomes 3
         # (or something else)
+        current_checkpoint = 1
 
         # training
+        size = len(train_loader.dataset)
+        self.transformation_model.train()
         for epoch in range(self.training_config["epochs"]):
-            size = len(train_loader.dataset)
-            self.transformation_model.train()
             for batch, (x, _) in enumerate(train_loader):
                 x = x.to(self.device)
                 result = self.transformation_model(x)
@@ -60,7 +61,7 @@ class StyleModelTrainer:
                 style_loss = self.loss_model.total_style_loss
                 tv_loss = self.loss_model.tv_loss.loss
                 current_iteration = batch * len(x)
-                if current_iteration % 250 == 0:
+                if current_iteration % 500 == 0:
                     current = batch * len(x)
                     print(f"style loss: {style_loss.item():>7f}", end="\t")
                     print(f"content loss: {content_loss.item():>7f}", end="\t")
@@ -69,7 +70,7 @@ class StyleModelTrainer:
                     print(f"[{current:>5d}/{size:>5d}]")
 
                 # autosaving every 1500 training steps
-                if current_iteration % 5e2 == 0:
+                if current_iteration % 1500 == 0:
                     torch.save(
                         {
                             "epoch": epoch,
@@ -77,8 +78,22 @@ class StyleModelTrainer:
                             "optimizer_state_dict": self.optimizer.state_dict(),
                             "loss": loss,
                         },
-                        "auto_save.pth",
+                        "auto-save/auto_save.pth",
                     )
+
+                # accumulative checkpointing every 10000 training steps
+                if current_iteration % 1e4 == 0:
+                    torch.save(
+                        {
+                            "epoch": epoch,
+                            "model_state_dict": self.transformation_model.state_dict(),
+                            "optimizer_state_dict": self.optimizer.state_dict(),
+                            "loss": loss,
+                        },
+                        f"auto-save/checkpoint{current_checkpoint}.pth",
+                    )
+                    current_checkpoint += 1
+
 
                 # adding losses to tensorboard
                 self.summary.add_scalar(
@@ -97,7 +112,7 @@ class StyleModelTrainer:
                     current_iteration + epoch * len(train_loader),
                 )
 
-                if current_iteration % 400 == 0:
+                if current_iteration % 500 == 0:
                     # preparing and displaying the example image
                     example_image = x[0] * self.loss_model.STD + self.loss_model.STD
                     example_image = example_image.clamp(0, 1) * 255
@@ -130,22 +145,6 @@ if __name__ == "__main__":
     device = {torch.has_cuda: "cuda", torch.has_mps: "mps"}.get(True, "cpu")
     print(f"Using {device} device")
 
-    # setting up the model
-    transformation_model = transformation_models.TransformationModel()
-
-    # setting up the loss model and optimizer
-    style_img = (
-        pil_to_tensor((Image.open("images/starry-night.jpg")).convert("RGB"))
-        .unsqueeze(0)
-        .float()
-        .div(255)
-    )
-    mean, std = loss_models.VGG16Loss.MEAN, loss_models.VGG16Loss.STD
-    style_img = (style_img - mean) / std
-
-    loss_model = loss_models.VGG16Loss(style_img, device=device)
-    optimizer = torch.optim.Adam(transformation_model.parameters(), lr=1e-3)
-
     # setting up the training config
     training_config = {
         "path_to_dataset": "data/mscoco",
@@ -153,6 +152,27 @@ if __name__ == "__main__":
         "img_size": 256,
         "epochs": 1,
     }
+
+    # setting up the model and optimizer
+    transformation_model = transformation_models.TransformationModel().to(device)
+    optimizer = torch.optim.Adam(transformation_model.parameters(), lr=1e-3)
+
+    # loading the model and optimizer
+    checkpoint = torch.load("saved-models/rain_princess_pretrained_better.pth")
+    transformation_model.load_state_dict(checkpoint["model_state_dict"])
+    optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
+    
+    # setting up the loss model
+    style_img = (
+        pil_to_tensor((Image.open("images/rain-princess.jpg")).convert("RGB"))
+        .unsqueeze(0)
+        .float()
+        .div(255)
+    )
+    mean, std = loss_models.VGG16Loss.MEAN, loss_models.VGG16Loss.STD
+    style_img = (style_img - mean) / std
+
+    loss_model = loss_models.VGG16Loss(style_img, content_weight=5e2, style_weight=1e8, device=device)
 
     # training the model
     trainer = StyleModelTrainer(

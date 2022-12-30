@@ -2,13 +2,13 @@ import torch
 from models import loss_models, transformation_models
 from PIL import Image
 from torchvision.utils import save_image
-from torchvision.transforms.functional import pil_to_tensor, resize
-from utils import display_images_in_a_grid
+from torchvision.transforms.functional import pil_to_tensor
 
 device = {torch.has_cuda: "cuda", torch.has_mps: "mps"}.get(True, "cpu")
 
 
 def apply_style(path_to_image, path_to_model):
+    # TODO: make this run on GPU
 
     img = (
         pil_to_tensor((Image.open(path_to_image)).convert("RGB"))
@@ -34,8 +34,8 @@ def apply_style(path_to_image, path_to_model):
 
 def main():
     apply_style(
-        "images/lion.jpg",
-        "saved-models/starry_night_pretrained.pth",
+        "images/houses.jpg",
+        "saved-models/rain_princess_pretrained_better.pth",
     )
 
 
