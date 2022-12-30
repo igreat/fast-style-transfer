@@ -13,13 +13,13 @@ class StyleLoss(nn.Module):
         self.target_gram = (
             get_gram_matrix(target_feat).detach().repeat(batch_size, 1, 1)
         )
-        self.strength = weight
+        self.weight = weight
         self.mode = "capture"
 
     def forward(self, gen_feature):
         if self.mode == "loss":
             gram_matrix = get_gram_matrix(gen_feature)
-            self.loss = self.strength * F.mse_loss(gram_matrix, self.target_gram)
+            self.loss = self.weight * F.mse_loss(gram_matrix, self.target_gram)
 
         return gen_feature
 
@@ -27,7 +27,7 @@ class StyleLoss(nn.Module):
 class ContentLoss(nn.Module):
     def __init__(self, weight):
         super(ContentLoss, self).__init__()
-        self.strength = weight
+        self.weight = weight
         self.mode = "capture"
         self.loss = 0.0
 
@@ -35,7 +35,7 @@ class ContentLoss(nn.Module):
         if self.mode == "capture":
             self.target_feature = gen_feature.detach()
         elif self.mode == "loss":
-            self.loss = self.strength * F.mse_loss(gen_feature, self.target_feature)
+            self.loss = self.weight * F.mse_loss(gen_feature, self.target_feature)
         else:
             raise ValueError(f"Unknown mode: {self.mode}")
 
@@ -63,42 +63,39 @@ class TVLoss(nn.Module):
         )
         return featmaps
 
-def preprocess_batch(images: torch.Tensor, loss_model):
+def preprocess_batch(images: torch.Tensor, mean, std):
     """
     Preprocess a batch of images for the style transfer model.
     Note that the mean and std are stored inside the loss model.
     """
     img = images.float().div(255)
-
-    mean, std = loss_model.MEAN, loss_model.STD
     img = (images - mean) / std
 
     return img
 
-def deprocess_batch(images: torch.Tensor, loss_model, device="cpu"):
+def deprocess_batch(images: torch.Tensor, mean, std):
     """
     De-process a batch of images for the style transfer model.
     Note that the mean and std are stored inside the loss model.
     """
-    mean, std = loss_model.MEAN.to(device), loss_model.STD.to(device)
     img = images * std + mean
     img = img.clamp(0, 1)
     return img
 
-def preprocess_image(image: torch.Tensor, loss_model):
+def preprocess_image(image: torch.Tensor, mean, std):
     """
     Preprocess an image for the style transfer model.
     Note that the mean and std are stored inside the loss model.
     """
     img = image.unsqueeze(0)
-    return preprocess_batch(img, loss_model)
+    return preprocess_batch(img, mean, std)
 
-def deprocess_image(image: torch.Tensor, loss_model, device="cpu"):
+def deprocess_image(image: torch.Tensor, mean, std):
     """
     De-process an image for the style transfer model.
     Note that the mean and std are stored inside the loss model.
     """
-    img = deprocess_batch(image, loss_model, device)
+    img = deprocess_batch(image, mean, std)
     return img.squeeze(0)
 
 

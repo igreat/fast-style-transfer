@@ -45,7 +45,11 @@ def stylize_video(video_path, model_path, save_path):
     frames = torch.from_numpy(frames).permute(0, 3, 1, 2)
 
     # preprocess the frames to what the model expects
-    frames = preprocess_batch(frames, loss_models.VGG16Loss)
+    mean = loss_models.VGG16Loss.MEAN
+    std = loss_models.VGG16Loss.STD
+    frames = preprocess_batch(frames, mean, std)
+    mean = mean.to(device)
+    std = std.to(device)
 
     # setting up the model
     transformation_model = transformation_models.TransformationModel().to(device)
@@ -65,7 +69,7 @@ def stylize_video(video_path, model_path, save_path):
         stylized_batch = transformation_model(batch)
 
         # depreprocess the batch
-        stylized_batch = deprocess_batch(stylized_batch, loss_models.VGG16Loss, device)
+        stylized_batch = deprocess_batch(stylized_batch, mean, std)
 
         # for some reason the transformed image ends up having slightly different dimensions
         # so we resize it to the right dimensions
@@ -81,7 +85,12 @@ def stylize_video(video_path, model_path, save_path):
 
     # convert the frames back to numpy arrays
     stylized_frames = (
-        stylized_frames.detach().permute(0, 2, 3, 1).mul(255).numpy().astype("uint8")
+        stylized_frames.detach()
+        .cpu()
+        .permute(0, 2, 3, 1)
+        .mul(255)
+        .numpy()
+        .astype("uint8")
     )
 
     # save the frames as a video

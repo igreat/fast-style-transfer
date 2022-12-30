@@ -6,8 +6,10 @@ from torchvision import transforms
 from torch.utils.data import DataLoader
 from torchvision import datasets
 from torch.utils.tensorboard import SummaryWriter
+from utils import preprocess_image
 from models import loss_models, transformation_models
 
+from argument_parsers import training_parser
 
 class StyleModelTrainer:
     def __init__(self, model, loss_model, optimizer, training_config, device):
@@ -141,42 +143,47 @@ class StyleModelTrainer:
         )
 
 if __name__ == "__main__":
+    args = training_parser()
+
     # setting up the device
-    device = {torch.has_cuda: "cuda", torch.has_mps: "mps"}.get(True, "cpu")
-    print(f"Using {device} device")
+    print(f"Using {args.device} device")
 
     # setting up the training config
     training_config = {
-        "path_to_dataset": "data/mscoco",
-        "batch_size": 4,
-        "img_size": 256,
-        "epochs": 1,
+        "path_to_dataset": args.train_dataset_path,
+        "batch_size": args.batch_size,
+        "img_size": args.image_size,
+        "epochs": args.epochs,
     }
 
     # setting up the model and optimizer
-    transformation_model = transformation_models.TransformationModel().to(device)
-    optimizer = torch.optim.Adam(transformation_model.parameters(), lr=1e-3)
+    transformation_model = transformation_models.TransformationModel().to(args.device)
+    optimizer = torch.optim.Adam(transformation_model.parameters(), lr=args.learning_rate)
 
     # loading the model and optimizer
-    checkpoint = torch.load("saved_models/rain_princess_pretrained_better.pth")
-    transformation_model.load_state_dict(checkpoint["model_state_dict"])
-    optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
+    if args.checkpoint_path:
+        checkpoint = torch.load(args.checkpoint_path)
+        transformation_model.load_state_dict(checkpoint["model_state_dict"])
+        optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
     
     # setting up the loss model
-    style_img = (
-        pil_to_tensor((Image.open("images/rain-princess.jpg")).convert("RGB"))
-        .unsqueeze(0)
-        .float()
-        .div(255)
-    )
     mean, std = loss_models.VGG16Loss.MEAN, loss_models.VGG16Loss.STD
-    style_img = (style_img - mean) / std
+    style_img = preprocess_image(
+        pil_to_tensor((Image.open(args.style_image_path)).convert("RGB")), mean, std
+    ).to(args.device)
 
-    loss_model = loss_models.VGG16Loss(style_img, content_weight=5e2, style_weight=1e8, device=device)
+    loss_model = loss_models.VGG16Loss(
+        style_img=style_img, 
+        content_weight=args.content_weight, 
+        style_weight=args.style_weight, 
+        tv_weight=args.tv_weight, 
+        batch_size=args.batch_size,
+        device=args.device,
+    )
 
     # training the model
     trainer = StyleModelTrainer(
-        transformation_model, loss_model, optimizer, training_config, device
+        transformation_model, loss_model, optimizer, training_config, args.device
     )
     trainer.train()
     print("Training complete!")
