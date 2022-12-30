@@ -4,18 +4,14 @@ import torch
 from models import loss_models, transformation_models
 from utils import preprocess_batch, deprocess_batch
 from torchvision.transforms.functional import resize
-from saved_models.pretrained_models import PRETRAINED_MODELS
+from argument_parsers import stylize_video_parser
 
 device = {torch.has_cuda: "cuda", torch.has_mps: "mps"}.get(True, "cpu")
 
 
-def stylize_video(
-    path_to_video,
-    path_to_model,
-    path_to_save="videos/generated_videos/stylized_video.mp4",
-):
+def stylize_video(video_path, model_path, save_path):
     # load the video
-    video = cv2.VideoCapture(path_to_video)
+    video = cv2.VideoCapture(video_path)
 
     # get the video's dimensions and frame count
     width = int(video.get(cv2.CAP_PROP_FRAME_WIDTH))
@@ -54,7 +50,7 @@ def stylize_video(
     # setting up the model
     transformation_model = transformation_models.TransformationModel().to(device)
     # loading weights of pretrained model
-    checkpoint = torch.load(path_to_model)
+    checkpoint = torch.load(model_path)
     transformation_model.load_state_dict(checkpoint["model_state_dict"])
 
     transformation_model.requires_grad_(False)
@@ -91,7 +87,7 @@ def stylize_video(
     # save the frames as a video
     fourcc = cv2.VideoWriter_fourcc(*"mp4v")
     out = cv2.VideoWriter(
-        path_to_save,
+        save_path,
         fourcc,
         float(fps),
         (stylized_frames.shape[2], stylized_frames.shape[1]),
@@ -103,18 +99,14 @@ def stylize_video(
 
     out.release()
 
-    print(f"styled video saved successfully at {path_to_save}")
+    print(f"styled video saved successfully at {save_path}")
 
     # to add the audio back to the video, run this command in the terminal:
-    # ffmpeg -i {path_to_save} -i {path_to_video} -c copy -map 0:v:0 -map 1:a:0 {path_to_save_audio}
+    # ffmpeg -i {save_path} -i {video_path} -c copy -map 0:v:0 -map 1:a:0 {save_with_audio_path}
 
 
 if __name__ == "__main__":
-    # path to the video file
-    path_to_video = "videos/source_videos/vid.mp4"
-    # path to the pretrained model
-    path_to_model = PRETRAINED_MODELS["rain_princess"]
+    args = stylize_video_parser()
+
     # stylize the video
-    stylize_video(
-        path_to_video, path_to_model, "videos/generated_videos/stylized_video.mp4"
-    )
+    stylize_video(args.video_path, args.model_path, args.save_path)
