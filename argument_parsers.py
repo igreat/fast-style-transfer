@@ -121,7 +121,7 @@ def training_parser() -> argparse.Namespace:
     parser.add_argument(
         "--style_weight",
         type=float,
-        default=1e8,
+        default=5e7,
         help="weight of the style loss",
     )
     parser.add_argument(

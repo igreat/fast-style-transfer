@@ -6,7 +6,7 @@ and Super-Resolution](https://cs.stanford.edu/people/jcjohns/eccv16/) by Justin 
 
 This method essentially involves training a model to **approximate** the [optimization based neural style transfer](https://github.com/igreat/artistic-style-net). The benefit is that it runs about 3 orders of magnitude faster!
 
-Because of its improved inference time, it's feasible to run style transfer in real time as you'll also see in this repository.
+Because of it's improved inference time, it's feasible to run style transfer in real time as you'll also see in this repository.
 
 <div align="center">
     <img src="images/style_images/starry-night.jpg" alt="Starry Night" width="256"/>

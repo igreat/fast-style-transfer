@@ -6,8 +6,8 @@ from torchvision import transforms
 from torch.utils.data import DataLoader
 from torchvision import datasets
 from torch.utils.tensorboard import SummaryWriter
-from utils import preprocess_image
 from models import loss_models, transformation_models
+from utils import preprocess_image, preprocess_batch
 
 from argument_parsers import training_parser
 
@@ -167,10 +167,16 @@ if __name__ == "__main__":
         optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
     
     # setting up the loss model
+    style_img = (
+        pil_to_tensor((Image.open(args.style_image_path)).convert("RGB"))
+        .unsqueeze(0)
+        .float()
+        .div(255)
+    )
     mean, std = loss_models.VGG16Loss.MEAN, loss_models.VGG16Loss.STD
-    style_img = preprocess_image(
-        pil_to_tensor((Image.open(args.style_image_path)).convert("RGB")), mean, std
-    ).to(args.device)
+    style_img = (style_img - mean) / std
+
+    # for some reason using process_image() here makes the style loss very large (big bug)
 
     loss_model = loss_models.VGG16Loss(
         style_img=style_img, 
