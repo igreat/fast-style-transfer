@@ -107,6 +107,5 @@ def stylize_video(video_path, model_path, save_path):
 
 if __name__ == "__main__":
     args = stylize_video_parser()
-
     # stylize the video
     stylize_video(args.video_path, args.model_path, args.save_path)
