@@ -13,6 +13,12 @@ def stylize_image_parser() -> argparse.Namespace:
         help="path to the image to be stylized",
     )
     parser.add_argument(
+        "--image_size",
+        type=int,
+        default=None,
+        help="size of the image to be stylized. if not specified, the image will not be resized",
+    )
+    parser.add_argument(
         "--pretrained_model",
         type=str,
         choices=PRETRAINED_MODELS.keys(),
@@ -119,6 +125,12 @@ def training_parser() -> argparse.Namespace:
         help="image size to train the model with",
     )
     parser.add_argument(
+        "--style_size",
+        type=int,
+        default=None,
+        help="style size to train the model with. if not specified, the orignal size will be used",
+    )
+    parser.add_argument(
         "--style_weight",
         type=float,
         default=5e7,
@@ -146,6 +158,12 @@ def training_parser() -> argparse.Namespace:
         "--checkpoint_path",
         type=str,
         help="path to the checkpoint to resume training from. If not specified, training will start from scratch",
+    )
+    parser.add_argument(
+        "--checkpoint_interval",
+        type=int,
+        default=2000,
+        help="number of images to train on before saving a checkpoint. keep it a multiple of the batch size",
     )
     parser.add_argument(
         "--device",

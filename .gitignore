@@ -5,3 +5,4 @@ runs
 images/content_images/me.jpg
 videos/source_videos/*.mp4
 videos/generated_videos/*.mp4
+auto_save/*

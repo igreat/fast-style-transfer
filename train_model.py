@@ -1,5 +1,5 @@
 import torch
-from torchvision.transforms.functional import pil_to_tensor
+from torchvision.transforms.functional import pil_to_tensor, resize
 from PIL import Image
 import numpy as np
 from torchvision import transforms
@@ -71,8 +71,8 @@ class StyleModelTrainer:
                     print(f"total loss: {loss.item():>7f}", end="\t")
                     print(f"[{current:>5d}/{size:>5d}]")
 
-                # autosaving every 1500 training steps
-                if current_iteration % 1500 == 0:
+                # autosaving every 1000 training steps
+                if current_iteration % 1000 == 0:
                     torch.save(
                         {
                             "epoch": epoch,
@@ -83,8 +83,8 @@ class StyleModelTrainer:
                         "auto_save/auto_save.pth",
                     )
 
-                # accumulative checkpointing every 10000 training steps
-                if current_iteration % 1e4 == 0:
+                # accumulative checkpointing
+                if current_iteration % self.training_config["checkpoint_interval"] == 0:
                     torch.save(
                         {
                             "epoch": epoch,
@@ -154,6 +154,7 @@ if __name__ == "__main__":
         "batch_size": args.batch_size,
         "img_size": args.image_size,
         "epochs": args.epochs,
+        "checkpoint_interval": args.checkpoint_interval,
     }
 
     # setting up the model and optimizer
@@ -173,6 +174,8 @@ if __name__ == "__main__":
         .float()
         .div(255)
     )
+    if args.style_size:
+        style_img = resize(style_img, args.style_size)
     mean, std = loss_models.VGG16Loss.MEAN, loss_models.VGG16Loss.STD
     style_img = (style_img - mean) / std
 
