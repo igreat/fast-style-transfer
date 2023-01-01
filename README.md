@@ -170,7 +170,7 @@ optional arguments:
 
 I've also provided an interface for you to train your own model from scratch. Note that this is very computationally heavy, and unless you have a good GPU and good RAM (12+ GB), be ready for your computer to be taken hostage by the training process.
 
-You'll have to download a large image dataset on your computer to train on. The orignal paper used a subset of the 2014 [MS-COCO test dataset](https://cocodataset.org/#download) (80k images) and trained for two epochs. Because all I have is an M1 macbook air, I only trained my models for only one epoch, but the results *mostly* converged.
+You'll have to download a large image dataset on your computer to train on. The original paper used the 2014 [MS-COCO test dataset](https://cocodataset.org/#download) (80k images) and trained on it for two epochs. Because all I have is an M1 macbook air, I only trained my models for one epoch, but the results *mostly* converged.
 
 Here is the most simple command to train a model:
 ```
