@@ -95,7 +95,7 @@ Though fast neural style transfer runs about three orders of magnitude faster th
 <!-- rain princess -->
 <p align="center">
     <img src="images/style_images/rain-princess.jpg" width="200" title="starry night">
-    <img src="images/generated_images/bahla_starry_night_op.png" width="200" title="fruits starry night">
+    <img src="images/generated_images/bahla_rain_princess_op.png" width="200" title="fruits starry night">
     <img src="images/generated_images/bahla-fort-rain-princess.png" width="200" title="bahla fort starry night">
 </p>
 
