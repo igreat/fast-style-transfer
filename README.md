@@ -18,8 +18,8 @@ Because of its improved inference time, it's feasible to run style transfer in r
 
 <!-- original images -->
 <p align="center">
-    <img src="images/content_images/fruits.jpg" alt="Fruits" width=256/>
-    <img src="images/content_images/bahla-fort.jpg" alt="Bahla Fort" width=256/>
+    <img src="images/content_images/fruits.jpg" alt="Fruits" width=220/>
+    <img src="images/content_images/bahla-fort.jpg" alt="Bahla Fort" width=220/>
 
 
 <!-- starry night -->
@@ -34,6 +34,13 @@ Because of its improved inference time, it's feasible to run style transfer in r
     <img src="images/style_images/rain-princess.jpg" width="200" title="rain princess">
     <img src="images/generated_images/fruits-rain-princess.png" width="200" title="fruits rain princess">
     <img src="images/generated_images/bahla-fort-rain-princess.png" width="200" title="bahla fort rain princess">
+</p>
+
+<!-- abstract dalle -->
+<p align="center">
+    <img src="images/style_images/mosaic.jpg" width="200" title="mosaic">
+    <img src="images/generated_images/fruits-mosaic.png" width="200" title="fruits mosaic">
+    <img src="images/generated_images/bahla-fort-mosaic.png" width="200" title="bahla mosaic">
 </p>
 
 <!-- abstract dalle -->
