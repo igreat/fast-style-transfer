@@ -5,3 +5,5 @@ PRETRAINED_MODELS: dict[str, str] = {
     "abstract": "saved_models/abstract_pretrained.pth",
     "mosaic": "saved_models/mosaic_pretrained.pth",
 }
+
+# TODO: retrain the abstract model with slightly different image and hyperparameters

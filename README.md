@@ -62,6 +62,15 @@ Though I've kept the total variation regulizer, I found that leaving its weight 
 
 ## Video Stylization
 
+<!-- stylized gifs -->
+<p align="center">
+    <img src="gifs/waving_mosaic.gif" width="200" title="abstract dalle">
+    <img src="gifs/waving_starry_night.gif" width="200" title="fruits abstract">
+    <img src="gifs/waving_rain_princess.gif" width="200" title="bahla fortabstract">
+</p>
+
+Because of its vastly improved inference time, we can run fast neural style transfer in videos, even in real time!
+
 ## Comparison with Optimization Based Method
 
 ## Setting This Up On Your Computer 

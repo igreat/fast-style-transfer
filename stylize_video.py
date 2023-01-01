@@ -9,7 +9,7 @@ from argument_parsers import stylize_video_parser
 device = {torch.has_cuda: "cuda", torch.has_mps: "mps"}.get(True, "cpu")
 
 
-def stylize_video(video_path, model_path, save_path):
+def stylize_video(video_path, model_path, save_path, batch_size, image_size):
     # load the video
     video = cv2.VideoCapture(video_path)
 
@@ -21,9 +21,9 @@ def stylize_video(video_path, model_path, save_path):
 
     frames_to_capture = frame_count
 
-    print(f"video dimensions: {width}x{height}")
-    print(f"video frame count: {frame_count}")
-    print(f"video fps: {fps}")
+    print(f"source video dimensions: {width}x{height}")
+    print(f"source video frame count: {frame_count}")
+    print(f"source video fps: {fps}\n")
 
     # create a numpy array to store the frames
     frames = np.empty((frames_to_capture, height, width, 3), np.dtype("uint8"))
@@ -48,20 +48,26 @@ def stylize_video(video_path, model_path, save_path):
     mean = loss_models.VGG16Loss.MEAN
     std = loss_models.VGG16Loss.STD
     frames = preprocess_batch(frames, mean, std)
+    if image_size:
+        frames = resize(frames, image_size)
+    width, height = frames.shape[3], frames.shape[2]
     mean = mean.to(device)
     std = std.to(device)
 
+    print(f"output video dimensions: {width}x{height}")
+    print(f"output video frame count: {frames_to_capture}")
+    print(f"output video fps: {fps}\n")
+
     # setting up the model
-    transformation_model = transformation_models.TransformationModel().to(device)
+    transformation_model = transformation_models.TransformationModel().to(device).eval()
     # loading weights of pretrained model
     checkpoint = torch.load(model_path)
     transformation_model.load_state_dict(checkpoint["model_state_dict"])
 
     transformation_model.requires_grad_(False)
 
-    # stylize the frames in batches of 8
+    # stylize the frames in batches
     stylized_frames = torch.empty_like(frames)
-    batch_size = 8
     for i in range(0, frames_to_capture, batch_size):
         # get the batch
         batch = frames[i : i + batch_size].to(device)
@@ -81,7 +87,7 @@ def stylize_video(video_path, model_path, save_path):
         if i % 24 == 0:
             print(f"stylized frame [{i}/{frames_to_capture}]")
 
-    print("styled frames successfully")
+    print("styled frames successfully\n")
 
     # convert the frames back to numpy arrays
     stylized_frames = (
@@ -92,6 +98,8 @@ def stylize_video(video_path, model_path, save_path):
         .numpy()
         .astype("uint8")
     )
+    # colors channel is in BGR, so we convert it to RGB
+    stylized_frames = stylized_frames[:, :, :, ::-1]
 
     # save the frames as a video
     fourcc = cv2.VideoWriter_fourcc(*"mp4v")
@@ -101,8 +109,7 @@ def stylize_video(video_path, model_path, save_path):
         float(fps),
         (stylized_frames.shape[2], stylized_frames.shape[1]),
     )
-    print(stylized_frames.shape)
-    print("saving video...")
+    print("saving video...\n")
     for styled_frame in stylized_frames:
         out.write(styled_frame)
 
@@ -117,4 +124,10 @@ def stylize_video(video_path, model_path, save_path):
 if __name__ == "__main__":
     args = stylize_video_parser()
     # stylize the video
-    stylize_video(args.video_path, args.model_path, args.save_path)
+    stylize_video(
+        args.video_path,
+        args.model_path,
+        args.save_path,
+        args.frames_per_step,
+        args.max_image_size,
+    )

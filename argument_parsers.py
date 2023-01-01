@@ -67,12 +67,23 @@ def stylize_video_parser() -> argparse.Namespace:
         type=str,
         help="path to the model to be used for stylizing the video",
     )
-
     parser.add_argument(
         "--save_path",
         type=str,
         default="videos/generated_videos/stylized_video.mp4",
         help="path to save the stylized video",
+    )
+    parser.add_argument(
+        "--frames_per_step",
+        type=int,
+        default=1,
+        help="number of frames to transform at a time. higher values will be faster but will result in signficantly more memory usage",
+    )
+    parser.add_argument(
+        "--max_image_size",
+        type=int,
+        default=None,
+        help="maximum size of dimensions of the video frames. if not specified, the frames will not be resized",
     )
     args = parser.parse_args()
 

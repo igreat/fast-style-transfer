@@ -17,7 +17,7 @@ def stylize_image(image_path, image_size, model_path, save_path):
         img = resize(img, size=image_size)
     img = preprocess_image(img, mean, std)
 
-    transformation_model = transformation_models.TransformationModel().to(device)
+    transformation_model = transformation_models.TransformationModel().to(device).eval()
 
     # code to load pretrained model
     checkpoint = torch.load(model_path)
@@ -25,7 +25,7 @@ def stylize_image(image_path, image_size, model_path, save_path):
 
     transformation_model.requires_grad_(False)
 
-    gen_image = transformation_model.eval()(img)
+    gen_image = transformation_model(img)
     gen_image = deprocess_image(gen_image, mean, std)
 
     # saving image
