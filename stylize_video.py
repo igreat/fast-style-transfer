@@ -58,19 +58,15 @@ def stylize_video(video_path, model_path, save_path, frames_per_step, image_size
 
     # use the first iteration to get the frame sizes
     for i in range(0, frames_to_capture, frames_batch_size):
-        print(
-            f"stylizing frames <{i}/{frames_to_capture}> to <{i + frames_batch_size}/{frames_to_capture}>"
-        )
         # make sure the last batch has the correct size
+        batch_size = frames_batch_size
         if i + frames_batch_size > frames_to_capture:
-            frames_batch = np.empty(
-                (frames_to_capture - i, height_original, width_original, 3),
-                dtype=np.uint8,
-            )
-        else:
-            frames_batch = np.empty(
-                (frames_batch_size, height_original, width_original, 3), dtype=np.uint8
-            )
+            batch_size = frames_to_capture - i
+        # create a batch of empty frames
+        frames_batch = np.empty(
+            (batch_size, height_original, width_original, 3), dtype=np.uint8
+        )
+        print(f"stylizing frames <{i}-{i + batch_size}/{frames_to_capture}>")
 
         # read the frames
         frame_index = 0
