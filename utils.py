@@ -1,3 +1,5 @@
+from typing import List
+
 import torch.nn as nn
 import torch.nn.functional as F
 import torch
@@ -100,7 +102,7 @@ def deprocess_image(image: torch.Tensor, mean, std):
 
 
 def display_images_in_a_grid(
-    images: list[np.ndarray], cols: int = 5, titles: list[str] = None
+    images: List[np.ndarray], cols: int = 5, titles: List[str] = None
 ):
     """Display a list of images in a grid."""
     assert (
