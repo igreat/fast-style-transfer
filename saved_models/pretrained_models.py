@@ -10,6 +10,7 @@ PRETRAINED_MODELS: Dict[str, str] = {
     "abstract": dir_path / "abstract_pretrained.pth",
     "mosaic": dir_path / "mosaic_pretrained.pth",
     "spaceship_orion": dir_path / "spaceship_orion.pth",
+    "cyber_fountain": dir_path / "cyber_fountain.pth",
 }
 
 # TODO: retrain the abstract model with slightly different image and hyperparameters
