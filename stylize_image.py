@@ -20,7 +20,7 @@ def stylize_image(image_path, image_size, model_path, save_path):
     transformation_model = transformation_models.TransformationModel().to(device).eval()
 
     # code to load pretrained model
-    checkpoint = torch.load(model_path)
+    checkpoint = torch.load(model_path, map_location=device)
     transformation_model.load_state_dict(checkpoint["model_state_dict"])
 
     transformation_model.requires_grad_(False)
