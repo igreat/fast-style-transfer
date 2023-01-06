@@ -40,7 +40,7 @@ def stylize_video(video_path, model_path, save_path, frames_per_step, image_size
     # setting up the model
     transformation_model = transformation_models.TransformationModel().to(device).eval()
     # loading weights of pretrained model
-    checkpoint = torch.load(model_path)
+    checkpoint = torch.load(model_path, torch.device('cuda'))
     transformation_model.load_state_dict(checkpoint["model_state_dict"])
     transformation_model.requires_grad_(False)
 
