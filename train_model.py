@@ -70,6 +70,12 @@ class StyleModelTrainer:
                     print(f"tv loss: {tv_loss.item():>7f}", end="\t")
                     print(f"total loss: {loss.item():>7f}", end="\t")
                     print(f"[{current:>5d}/{size:>5d}]")
+                    
+                    # at current parameters loss never goes under ~700
+                    # final results are acceptable for now
+                    if loss.item() < 780.0:
+                        # go to next epoch
+                        break
 
                 # autosaving every 1000 training steps
                 if current_iteration % 1000 == 0:
