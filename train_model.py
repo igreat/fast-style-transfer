@@ -71,9 +71,8 @@ class StyleModelTrainer:
                     print(f"total loss: {loss.item():>7f}", end="\t")
                     print(f"[{current:>5d}/{size:>5d}]")
                     
-                    # at current parameters loss never goes under ~700
-                    # final results are acceptable for now
-                    if loss.item() < 780.0:
+                    # after 80000 images
+                    if current == 80000:
                         # go to next epoch
                         break
 
