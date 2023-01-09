@@ -34,22 +34,30 @@ class StyleModelTrainer:
             root=self.training_config["path_to_dataset"], transform=transform
         )
         train_loader = DataLoader(
-            train_dataset, batch_size=self.training_config["batch_size"], shuffle=True
+            train_dataset, batch_size=self.training_config["batch_size"], shuffle=True,
         )
+
+
         return train_loader
 
     def train(self):
         train_loader = self.get_training_loader()
 
-        # there is a bug when doing multiple epochs where the batch size for some reason becomes 3
-        # (or something else)
         current_checkpoint = 1
 
-        # training
-        size = len(train_loader.dataset)
+        ## training ##
+        # the size is rounded down to the nearest multiple of the batch size
+        dataset_size = len(train_loader.dataset)
+        dataset_size -= dataset_size % self.training_config["batch_size"]
         self.transformation_model.train()
         for epoch in range(self.training_config["epochs"]):
             for batch, (x, _) in enumerate(train_loader):
+
+                # the batch size at the final batch is not always the same
+                # as the batch size specified in the training config
+                if len(x) != self.training_config["batch_size"]:
+                    continue
+
                 x = x.to(self.device)
                 result = self.transformation_model(x)
 
@@ -62,14 +70,14 @@ class StyleModelTrainer:
                 content_loss = self.loss_model.total_content_loss
                 style_loss = self.loss_model.total_style_loss
                 tv_loss = self.loss_model.tv_loss.loss
-                current_iteration = batch * len(x)
+                current_iteration = batch * training_config["batch_size"]
                 if current_iteration % 500 == 0:
                     current = batch * len(x)
                     print(f"style loss: {style_loss.item():>7f}", end="\t")
                     print(f"content loss: {content_loss.item():>7f}", end="\t")
                     print(f"tv loss: {tv_loss.item():>7f}", end="\t")
                     print(f"total loss: {loss.item():>7f}", end="\t")
-                    print(f"[{current:>5d}/{size:>5d}]")
+                    print(f"[{current:>5d}/{dataset_size:>5d}]")
 
                 # autosaving every 1000 training steps
                 if current_iteration % 1000 == 0:
@@ -101,17 +109,17 @@ class StyleModelTrainer:
                 self.summary.add_scalar(
                     "losses/content",
                     content_loss.item(),
-                    current_iteration + epoch * len(train_loader),
+                    current_iteration + epoch * dataset_size,
                 )
                 self.summary.add_scalar(
                     "losses/style",
                     style_loss.item(),
-                    current_iteration + epoch * len(train_loader),
+                    current_iteration + epoch * dataset_size,
                 )
                 self.summary.add_scalar(
                     "losses/tv",
                     tv_loss.item(),
-                    current_iteration + epoch * len(train_loader),
+                    current_iteration + epoch * dataset_size,
                 )
 
                 if current_iteration % 500 == 0:
@@ -122,7 +130,9 @@ class StyleModelTrainer:
                         example_image.detach().cpu().numpy().astype(np.uint8)
                     )
                     self.summary.add_image(
-                        "images/example_image", example_image, current_iteration + 1
+                        "images/example_image", 
+                        example_image, 
+                        current_iteration + epoch * dataset_size + 1,
                     )
                     # preparing and displaying the styled image
                     example_result = (
@@ -135,7 +145,7 @@ class StyleModelTrainer:
                     self.summary.add_image(
                         "images/example_styled_image",
                         example_result,
-                        current_iteration + 1,
+                        current_iteration + epoch * dataset_size + 1,
                     )
 
         torch.save(
