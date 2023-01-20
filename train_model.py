@@ -48,6 +48,7 @@ class StyleModelTrainer:
         # training
         size = len(train_loader.dataset)
         self.transformation_model.train()
+        starting_content_loss = None
         for epoch in range(self.training_config["epochs"]):
             for batch, (x, _) in enumerate(train_loader):
                 x = x.to(self.device)
@@ -60,6 +61,8 @@ class StyleModelTrainer:
 
                 # printing losses
                 content_loss = self.loss_model.total_content_loss
+                if starting_content_loss is None:
+                    starting_content_loss = content_loss
                 style_loss = self.loss_model.total_style_loss
                 tv_loss = self.loss_model.tv_loss.loss
                 current_iteration = batch * len(x)
@@ -72,7 +75,7 @@ class StyleModelTrainer:
                     print(f"[{current:>5d}/{size:>5d}]")
                     
                     # after ~55000 images loss gets stable
-                    if current == 55000 or content_loss < 1000:
+                    if current == 55000 or content_loss < starting_content_loss * 0.70:
                         # go to next epoch
                         break
 
