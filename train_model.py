@@ -143,8 +143,11 @@ class StyleModelTrainer:
                         current_iteration + 1,
                     )
 
+        import os
+        from pathlib import Path
+        dirn = Path(os.path.dirname(os.path.realpath(__file__))) 
         torch.save(
-            self.transformation_model.state_dict(), "saved_models/trained_model.pth"
+            self.transformation_model.state_dict(), dirn / "saved_models" / "trained_model.pth"
         )
 
 if __name__ == "__main__":
