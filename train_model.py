@@ -87,7 +87,7 @@ class StyleModelTrainer:
                         "auto_save/auto_save.pth",
                     )
                     # after ~55000 images loss gets stable
-                    if current == 55000 or style_loss < starting_style_loss * 0.90:
+                    if current == 45000:
                         # go to next epoch
                         break
 
