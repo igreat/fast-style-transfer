@@ -72,7 +72,7 @@ class StyleModelTrainer:
                     print(f"[{current:>5d}/{size:>5d}]")
                     
                     # after ~55000 images loss gets stable
-                    if current == 55000:
+                    if current == 55000 or content_loss < 1000:
                         # go to next epoch
                         break
 
