@@ -74,11 +74,6 @@ class StyleModelTrainer:
                     print(f"tv loss: {tv_loss.item():>7f}", end="\t")
                     print(f"total loss: {loss.item():>7f}", end="\t")
                     print(f"[{current:>5d}/{size:>5d}]")
-                    
-                    # after ~55000 images loss gets stable
-                    if current == 55000 or style_loss < starting_style_loss * 0.70:
-                        # go to next epoch
-                        break
 
                 # autosaving every 1000 training steps
                 if current_iteration % 1000 == 0:
@@ -91,6 +86,10 @@ class StyleModelTrainer:
                         },
                         "auto_save/auto_save.pth",
                     )
+                    # after ~55000 images loss gets stable
+                    if current == 55000 or style_loss < starting_style_loss * 0.90:
+                        # go to next epoch
+                        break
 
                 # accumulative checkpointing
                 if current_iteration % self.training_config["checkpoint_interval"] == 0:
