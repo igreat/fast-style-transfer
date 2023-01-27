@@ -15,6 +15,7 @@ PRETRAINED_MODELS: Dict[str, str] = {
     "cyberpunk_cranes": dir_path / "cyberpunk_cranes.pth",
     "shibuya_post_apoca": dir_path / "shibuya_post_apoca.pth",
     "168_british_library": dir_path / "168_british_library.pth",
+    "117_british_library": dir_path / "117_british_library.pth",
 }
 
 # TODO: retrain the abstract model with slightly different image and hyperparameters
