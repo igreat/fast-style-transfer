@@ -18,4 +18,6 @@ PRETRAINED_MODELS: Dict[str, str] = {
     "117_british_library": dir_path / "117_british_library.pth",
 }
 
+print("models available: \n", PRETRAINED_MODELS)
+
 # TODO: retrain the abstract model with slightly different image and hyperparameters
