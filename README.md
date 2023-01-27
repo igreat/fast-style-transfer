@@ -178,7 +178,7 @@ python train_model.py --style_image_path {PATH TO YOUR STYLE IMAGE} --train_data
 ```
 For example, to train a model on the 2014 ms-coco datset to transform an image to the style of the starry night, you have to type the following command:
 ```
-python train_model.py --style_image_path images/style_images/starry_night.jpg --train_dataset_path data/mscoco
+python train_model.py --style_image_path images/style_images/starry-night.jpg --train_dataset_path data/mscoco
 ```
 
 You can also monitor the training of your model through tensorboard by typing the following in your terminal:
@@ -186,7 +186,7 @@ You can also monitor the training of your model through tensorboard by typing th
 ```
 tensorboard --logdir=runs --samples_per_plugin images={MAX IMAGES}
 ```
-
+<!-- TODO: add tensorboard demo -->
 Note you'll need multiple terminals for this: one for training your model and one for the tensorboard. I used the terminals provided in VSCODE for the training and my default terminal for tensorboard. 
 
 For more options, here is what the help message gives:
