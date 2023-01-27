@@ -16,6 +16,7 @@ PRETRAINED_MODELS: Dict[str, str] = {
     "shibuya_post_apoca": dir_path / "shibuya_post_apoca.pth",
     "168_british_library": dir_path / "168_british_library.pth",
     "117_british_library": dir_path / "117_british_library.pth",
+    "193_british_library": dir_path / "193_british_library.pth",
 }
 
 print("models available: \n", PRETRAINED_MODELS)
