@@ -17,7 +17,7 @@ PRETRAINED_MODELS: Dict[str, str] = {
     "168_british_library": dir_path / "168_british_library.pth",
     "117_british_library": dir_path / "117_british_library.pth",
     "193_british_library": dir_path / "193_british_library.pth",
-    "063_135_140_177_composite_british_library.pth": dir_path / "063_135_140_177_composite_british_library.pth",
+    "063_135_140_177_composite_british_library.pth": dir_path / "063_135_140_177_composite_british_library",
 }
 
 from pprint import pprint
