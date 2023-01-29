@@ -147,10 +147,13 @@ class StyleModelTrainer:
                         current_iteration + epoch * dataset_size + 1,
                     )
 
-        # NOTE: this save doesn't store optimizer information and is only used for inference
-        #       if you want to continue training, use the checkpointing
+        # optimizer state dict saved just in case
         torch.save(
-            self.transformation_model.state_dict(), "saved_models/trained_model.pth"
+            {
+                "model_state_dict": self.transformation_model.state_dict(),
+                "optimizer_state_dict": self.optimizer.state_dict(),
+            },
+            "saved_models/trained_model.pth",
         )
 
 if __name__ == "__main__":
